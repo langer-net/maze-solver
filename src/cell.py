@@ -23,14 +23,10 @@ class Cell:
             return
         self._x1, self._x2 = x1, x2
         self._y1, self._y2 = y1, y2
-        if self.has_left_wall:
-            self._draw_wall(Point(x1, y1), Point(x1, y2))
-        if self.has_right_wall:
-            self._draw_wall(Point(x2, y1), Point(x2, y2))
-        if self.has_top_wall:
-            self._draw_wall(Point(x1, y1), Point(x2, y1))
-        if self.has_bottom_wall:
-            self._draw_wall(Point(x1, y2), Point(x2, y2))
+        self._draw_wall(Point(x1, y1), Point(x1, y2), wall_exists=self.has_left_wall)
+        self._draw_wall(Point(x2, y1), Point(x2, y2), wall_exists=self.has_right_wall)
+        self._draw_wall(Point(x1, y1), Point(x2, y1), wall_exists=self.has_top_wall)
+        self._draw_wall(Point(x1, y2), Point(x2, y2), wall_exists=self.has_bottom_wall)
 
     def draw_move(self, target_cell: TCell, undo: bool = False) -> None:
         if self._window is None:
@@ -60,9 +56,12 @@ class Cell:
                                           target_point1=Point(target_x_middle, target_y_middle),
                                           target_point2=Point(target_x_middle, target_cell._y1), fill_color=fill_color)
 
-    def _draw_wall(self, start: Point, end: Point) -> None:
+    def _draw_wall(self, start: Point, end: Point, wall_exists: bool) -> None:
         line = Line(start, end)
-        self._window.draw_line(line=line)
+        if wall_exists:
+            self._window.draw_line(line=line, fill_color="black")
+        else:
+            self._window.draw_line(line=line, fill_color="white")
 
     @staticmethod
     def _get_middle_coordinates(cell: TCell) -> Tuple[int, int]:
