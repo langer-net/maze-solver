@@ -12,11 +12,12 @@ class Cell:
         self.has_right_wall = True
         self.has_top_wall = True
         self.has_bottom_wall = True
+        self.visited = False
+        self._window = window
         self._x1 = None
         self._x2 = None
         self._y1 = None
         self._y2 = None
-        self._window = window
 
     def draw(self, x1: int, y1: int, x2: int, y2: int) -> None:
         if self._window is None:
@@ -46,7 +47,7 @@ class Cell:
                                           target_point1=Point(target_x_middle, target_y_middle),
                                           target_point2=Point(target_cell._x1, target_y_middle), fill_color=fill_color)
         # moving up
-        if self._y1 > target_cell._y1:
+        elif self._y1 > target_cell._y1:
             self._draw_line_between_cells(self_point1=Point(x_middle, y_middle), self_point2=Point(x_middle, self._y1),
                                           target_point1=Point(target_x_middle, target_y_middle),
                                           target_point2=Point(target_x_middle, target_cell._y2), fill_color=fill_color)
