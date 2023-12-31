@@ -19,10 +19,22 @@ class Maze:
         if seed is not None:
             random.seed(seed)
         self._cells = []
+        self.MOVEMENT_DIRECTIONS = (
+            {"column_shift": -1, "row_shift": 0, "direction": "left"},
+            {"column_shift": 1, "row_shift": 0, "direction": "right"},
+            {"column_shift": 0, "row_shift": -1, "direction": "top"},
+            {"column_shift": 0, "row_shift": 1, "direction": "bottom"}
+        )
 
+        # maze setup
         self._create_cells()
         self._break_entrance_and_exit()
         self._break_walls_r(column_num=0, row_num=0)
+        self._reset_cells_visited()
+
+    def solve(self) -> bool:
+        solved = self._solve_r(column_num=0, row_num=0)
+        return solved
 
     def _create_cells(self) -> None:
         self._cells = [[Cell(self._window) for _ in range(self._num_rows)] for _ in range(self._num_cols)]
@@ -42,7 +54,7 @@ class Maze:
         if self._window is None:
             return
         self._window.redraw()
-        time.sleep(0.001)
+        time.sleep(0.005)
 
     def _break_entrance_and_exit(self) -> None:
         self._cells[0][0].has_top_wall = False
@@ -58,38 +70,87 @@ class Maze:
             if len(possible_neighbors) == 0:
                 self._draw_cell(column_num=column_num, row_num=row_num)
                 return
-            # randomly choose a direction to go
+            # randomly choose the next neighbor cell to process
             direction_idx = random.randrange(len(possible_neighbors))
             *next_neighbor, direction = possible_neighbors[direction_idx]
             # remove walls between the current and the next cell
             self._remove_wall(current_column=column_num, current_row=row_num, next_column=next_neighbor[0],
                               next_row=next_neighbor[1], direction=direction)
-            # recursively visit next cell
+            # recursively visit next neighbor cell
             self._break_walls_r(column_num=next_neighbor[0], row_num=next_neighbor[1])
 
     def _get_unvisited_neighbors(self, column_num: int, row_num: int) -> List[Tuple[int, int, str]]:
         unvisited_neighbors = []
-        # list of directions: ((column_delta, row_delta, wall_removal_actions))
-        directions = ((-1, 0, 'left'), (1, 0, 'right'), (0, -1, 'top'), (0, 1, 'bottom'))
-        for column_delta, row_delta, direction in directions:
-            new_column_num = column_num + column_delta
-            new_row_num = row_num + row_delta
+        for direction in self.MOVEMENT_DIRECTIONS:
+            new_column_num = column_num + direction["column_shift"]
+            new_row_num = row_num + direction["row_shift"]
             if (0 <= new_column_num < self._num_cols and
                     0 <= new_row_num < self._num_rows and
                     not self._cells[new_column_num][new_row_num].visited):
-                unvisited_neighbors.append((new_column_num, new_row_num, direction))
+                unvisited_neighbors.append((new_column_num, new_row_num, direction["direction"]))
         return unvisited_neighbors
 
     def _remove_wall(self, current_column: int, current_row: int, next_column: int, next_row: int, direction: str):
-        if direction == 'left':
+        if direction == "left":
             self._cells[current_column][current_row].has_left_wall = False
             self._cells[next_column][next_row].has_right_wall = False
-        elif direction == 'right':
+        elif direction == "right":
             self._cells[current_column][current_row].has_right_wall = False
             self._cells[next_column][next_row].has_left_wall = False
-        elif direction == 'top':
+        elif direction == "top":
             self._cells[current_column][current_row].has_top_wall = False
             self._cells[next_column][next_row].has_bottom_wall = False
         else:  # bottom
             self._cells[current_column][current_row].has_bottom_wall = False
             self._cells[next_column][next_row].has_top_wall = False
+
+    def _reset_cells_visited(self):
+        cells = [cell for column in self._cells for cell in column]
+        for cell in cells:
+            cell.visited = False
+
+    def _solve_r(self, column_num: int, row_num: int) -> bool:
+        self._animate()
+        current_cell = self._cells[column_num][row_num]
+        current_cell.visited = True
+        # check if goal cell reached
+        if column_num == self._num_cols - 1 and row_num == self._num_rows - 1:
+            return True
+        # check out each direction
+        # left
+        if (column_num > 0 and not current_cell.has_left_wall and
+                not self._cells[column_num - 1][row_num].visited):
+            current_cell.draw_move(target_cell=self._cells[column_num - 1][row_num])
+            solved = self._solve_r(column_num - 1, row_num)
+            if solved:
+                return True
+            else:
+                current_cell.draw_move(target_cell=self._cells[column_num - 1][row_num], undo=True)
+        # right
+        if (column_num < self._num_cols - 1 and not current_cell.has_right_wall and
+                not self._cells[column_num + 1][row_num].visited):
+            current_cell.draw_move(target_cell=self._cells[column_num + 1][row_num])
+            solved = self._solve_r(column_num + 1, row_num)
+            if solved:
+                return True
+            else:
+                current_cell.draw_move(target_cell=self._cells[column_num + 1][row_num], undo=True)
+        # top
+        if (row_num > 0 and not current_cell.has_top_wall and
+                not self._cells[column_num][row_num - 1].visited):
+            current_cell.draw_move(target_cell=self._cells[column_num][row_num - 1])
+            solved = self._solve_r(column_num, row_num - 1)
+            if solved:
+                return True
+            else:
+                current_cell.draw_move(target_cell=self._cells[column_num][row_num - 1], undo=True)
+        # bottom
+        if (row_num < self._num_rows - 1 and not current_cell.has_bottom_wall and
+                not self._cells[column_num][row_num + 1].visited):
+            current_cell.draw_move(target_cell=self._cells[column_num][row_num + 1])
+            solved = self._solve_r(column_num, row_num + 1)
+            if solved:
+                return True
+            else:
+                current_cell.draw_move(target_cell=self._cells[column_num][row_num + 1], undo=True)
+        return False
