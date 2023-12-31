@@ -18,12 +18,12 @@ class Maze:
         self._window = window
         if seed is not None:
             random.seed(seed)
-        self._cells = []
+        self._cells: List[List[Cell]] = []
         self.MOVEMENT_DIRECTIONS = (
-            {"column_shift": -1, "row_shift": 0, "direction": "left"},
-            {"column_shift": 1, "row_shift": 0, "direction": "right"},
-            {"column_shift": 0, "row_shift": -1, "direction": "top"},
-            {"column_shift": 0, "row_shift": 1, "direction": "bottom"}
+            {"column_shift": -1, "row_shift": 0, "direction": "left", "wall_attr": "has_left_wall"},
+            {"column_shift": 1, "row_shift": 0, "direction": "right", "wall_attr": "has_right_wall"},
+            {"column_shift": 0, "row_shift": -1, "direction": "top", "wall_attr": "has_top_wall"},
+            {"column_shift": 0, "row_shift": 1, "direction": "bottom", "wall_attr": "has_bottom_wall"}
         )
 
         # maze setup
@@ -72,14 +72,14 @@ class Maze:
                 return
             # randomly choose the next neighbor cell to process
             direction_idx = random.randrange(len(possible_neighbors))
-            *next_neighbor, direction = possible_neighbors[direction_idx]
+            next_neighbor, direction = possible_neighbors[direction_idx]
             # remove walls between the current and the next cell
             self._remove_wall(current_column=column_num, current_row=row_num, next_column=next_neighbor[0],
                               next_row=next_neighbor[1], direction=direction)
             # recursively visit next neighbor cell
             self._break_walls_r(column_num=next_neighbor[0], row_num=next_neighbor[1])
 
-    def _get_unvisited_neighbors(self, column_num: int, row_num: int) -> List[Tuple[int, int, str]]:
+    def _get_unvisited_neighbors(self, column_num: int, row_num: int) -> List[Tuple[Tuple[int, int], str]]:
         unvisited_neighbors = []
         for direction in self.MOVEMENT_DIRECTIONS:
             new_column_num = column_num + direction["column_shift"]
@@ -87,7 +87,7 @@ class Maze:
             if (0 <= new_column_num < self._num_cols and
                     0 <= new_row_num < self._num_rows and
                     not self._cells[new_column_num][new_row_num].visited):
-                unvisited_neighbors.append((new_column_num, new_row_num, direction["direction"]))
+                unvisited_neighbors.append(((new_column_num, new_row_num), direction["direction"]))
         return unvisited_neighbors
 
     def _remove_wall(self, current_column: int, current_row: int, next_column: int, next_row: int, direction: str):
@@ -117,40 +117,20 @@ class Maze:
         if column_num == self._num_cols - 1 and row_num == self._num_rows - 1:
             return True
         # check out each direction
-        # left
-        if (column_num > 0 and not current_cell.has_left_wall and
-                not self._cells[column_num - 1][row_num].visited):
-            current_cell.draw_move(target_cell=self._cells[column_num - 1][row_num])
-            solved = self._solve_r(column_num - 1, row_num)
-            if solved:
+        for direction in self.MOVEMENT_DIRECTIONS:
+            new_column_num = column_num + direction["column_shift"]
+            new_row_num = row_num + direction["row_shift"]
+            if self._try_move(current_cell, new_column_num, new_row_num, direction['wall_attr']):
                 return True
-            else:
-                current_cell.draw_move(target_cell=self._cells[column_num - 1][row_num], undo=True)
-        # right
-        if (column_num < self._num_cols - 1 and not current_cell.has_right_wall and
-                not self._cells[column_num + 1][row_num].visited):
-            current_cell.draw_move(target_cell=self._cells[column_num + 1][row_num])
-            solved = self._solve_r(column_num + 1, row_num)
-            if solved:
-                return True
-            else:
-                current_cell.draw_move(target_cell=self._cells[column_num + 1][row_num], undo=True)
-        # top
-        if (row_num > 0 and not current_cell.has_top_wall and
-                not self._cells[column_num][row_num - 1].visited):
-            current_cell.draw_move(target_cell=self._cells[column_num][row_num - 1])
-            solved = self._solve_r(column_num, row_num - 1)
-            if solved:
-                return True
-            else:
-                current_cell.draw_move(target_cell=self._cells[column_num][row_num - 1], undo=True)
-        # bottom
-        if (row_num < self._num_rows - 1 and not current_cell.has_bottom_wall and
-                not self._cells[column_num][row_num + 1].visited):
-            current_cell.draw_move(target_cell=self._cells[column_num][row_num + 1])
-            solved = self._solve_r(column_num, row_num + 1)
-            if solved:
-                return True
-            else:
-                current_cell.draw_move(target_cell=self._cells[column_num][row_num + 1], undo=True)
+        return False
+
+    def _try_move(self, current_cell: Cell, new_column_num: int, new_row_num: int, wall_attr: str) -> bool:
+        if 0 <= new_column_num < self._num_cols and 0 <= new_row_num < self._num_rows:
+            target_cell = self._cells[new_column_num][new_row_num]
+            if not getattr(current_cell, wall_attr) and not target_cell.visited:
+                current_cell.draw_move(target_cell=target_cell)
+                if self._solve_r(new_column_num, new_row_num):
+                    return True
+                else:
+                    current_cell.draw_move(target_cell=target_cell, undo=True)
         return False
