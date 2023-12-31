@@ -7,7 +7,7 @@ TCell = TypeVar("TCell", bound="Cell")
 
 
 class Cell:
-    def __init__(self, window: Window) -> None:
+    def __init__(self, window: Window = None) -> None:
         self.has_left_wall = True
         self.has_right_wall = True
         self.has_top_wall = True
@@ -19,6 +19,8 @@ class Cell:
         self._window = window
 
     def draw(self, x1: int, y1: int, x2: int, y2: int) -> None:
+        if self._window is None:
+            return
         self._x1, self._x2 = x1, x2
         self._y1, self._y2 = y1, y2
         if self.has_left_wall:
@@ -31,6 +33,8 @@ class Cell:
             self._draw_wall(Point(x1, y2), Point(x2, y2))
 
     def draw_move(self, target_cell: TCell, undo: bool = False) -> None:
+        if self._window is None:
+            return
         fill_color = "gray" if undo else "red"
         x_middle, y_middle = self._get_middle_coordinates(self)
         target_x_middle, target_y_middle = self._get_middle_coordinates(target_cell)
