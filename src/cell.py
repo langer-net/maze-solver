@@ -69,6 +69,6 @@ class Cell:
         return (cell._x1 + cell._x2) // 2, (cell._y1 + cell._y2) // 2
 
     def _draw_line_between_cells(self, self_point1: Point, self_point2: Point, target_point1: Point,
-                                  target_point2: Point, fill_color: str) -> None:
+                                 target_point2: Point, fill_color: str) -> None:
         self._window.draw_line(line=Line(self_point1, self_point2), fill_color=fill_color)
         self._window.draw_line(line=Line(target_point1, target_point2), fill_color=fill_color)
