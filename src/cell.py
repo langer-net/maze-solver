@@ -1,4 +1,4 @@
-from typing import TypeVar, Tuple, Self
+from typing import TypeVar, Tuple
 
 from src.geometries import Line, Point
 from src.window import Window
