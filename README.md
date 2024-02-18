@@ -22,8 +22,8 @@ To run the project use the following command:
 python main.py
 ```
 The program displays a window in which a grid is rendered. This grid is then transformed into a maze using a **recursive 
-depth-first algorithm**. Another **depth-first algorithm** then attempts to solve the maze. A **red line** shows the 
-correct path through the maze, while **gray lines** indicate failed attempts.
+depth-first algorithm**. Another **recursive depth-first algorithm** then attempts to solve the maze. A **red line** 
+shows the correct path through the maze, while **gray lines** indicate failed attempts.
 
 ## Versions
 
